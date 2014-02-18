@@ -41,6 +41,14 @@ function lookup(addrs, fn) {
   });
 }
 
+/**
+ * Dedupe `results`.
+ *
+ * @param {Array} results
+ * @return {Array}
+ * @api private
+ */
+
 function dedupe(results) {
   var ret = [];
   var set = {};
