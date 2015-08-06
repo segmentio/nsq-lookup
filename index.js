@@ -27,6 +27,7 @@ function lookup(addrs, fn) {
     batch.push(function(done){
       request
       .get(addr + '/nodes')
+      .timeout(10000)
       .end(function(err, res){
         if (err) return done(err);
         if (res.error) return done(res.error);
