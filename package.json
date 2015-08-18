@@ -10,7 +10,8 @@
   ],
   "dependencies": {
     "batch": "~0.5.0",
-    "superagent": "~0.16.0"
+    "superagent": "~0.16.0",
+    "superagent-retry": "^0.5.1"
   },
   "devDependencies": {
     "mocha": "*",

@@ -3,8 +3,16 @@
  * Module dependencies.
  */
 
+var debug = require('debug')('nsq-lookup');
 var request = require('superagent');
 var Batch = require('batch');
+
+/**
+ * Retry support.
+ */
+
+require('superagent-retry')(request);
+
 
 /**
  * Expose `lookup()`.
@@ -20,14 +28,24 @@ module.exports = lookup;
  * @api public
  */
 
-function lookup(addrs, fn) {
+function lookup(addrs, opts, fn) {
   var batch = new Batch;
+  batch.throws(false);
+  batch.concurrency(addrs.length);
 
+  if ('function' == typeof opts) {
+    fn = opts;
+    opts = {};
+  }
+
+  var timeout = opts.timeout || 20000;
   addrs.forEach(function(addr){
+    debug('lookup %s', addr);
     batch.push(function(done){
       request
       .get(addr + '/nodes')
-      .timeout(10000)
+      .timeout(timeout)
+      .retry(2)
       .end(function(err, res){
         if (err) return done(err);
         if (res.error) return done(res.error);
@@ -36,9 +54,20 @@ function lookup(addrs, fn) {
     });
   });
 
-  batch.end(function(err, results){
-    if (err) return fn(err);
-    fn(null, dedupe(results));
+  batch.end(function(errors, results){
+    errors = filter(errors);
+    results = dedupe(filter(results));
+    debug('errors=%j results=%j', errors, results);
+  });
+}
+
+/**
+ * Drops null and uddefined.
+ */
+
+function filter(arr) {
+  return arr.filter(function(v){
+    return v != null;
   });
 }
 
@@ -51,14 +80,15 @@ function lookup(addrs, fn) {
  */
 
 function dedupe(results) {
+  results = results || [];
+
   var ret = [];
   var set = {};
 
   results.forEach(function(nodes){
     nodes.forEach(function(node){
       var addr = node.broadcast_address + ':' + node.tcp_port;
-      if (set[addr]) return;
-
+      if (set[addr]) return debug('already registered');
       set[addr] = true;
       ret.push(node);
     });
