@@ -1,6 +1,6 @@
 {
   "name": "nsq-lookup",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "repository": "segmentio/nsq-lookup",
   "description": "lookup nsqd instances via nsqlookupd",
   "keywords": [
