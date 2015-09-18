@@ -58,7 +58,7 @@ function lookup(addrs, opts, fn) {
     errors = filter(errors);
     results = dedupe(filter(results));
     debug('errors=%j results=%j', errors, results);
-    fn(errors, results)
+    fn(errors.length ? errors : null, results);
   });
 }
 
