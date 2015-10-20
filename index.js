@@ -39,17 +39,21 @@ function lookup(addrs, opts, fn) {
   }
 
   var timeout = opts.timeout || 20000;
+  var retries = opts.retries || 2;
+
   addrs.forEach(function(addr){
     debug('lookup %s', addr);
     batch.push(function(done){
       request
       .get(addr + '/nodes')
       .timeout(timeout)
-      .retry(2)
+      .retry(retries)
       .end(function(err, res){
         if (err) return done(err);
         if (res.error) return done(res.error);
-        done(null, res.body.data.producers);
+        var data = res.body && res.body.data || {};
+        var producers = data.producers || [];
+        done(null, producers);
       })
     });
   });
@@ -67,6 +71,7 @@ function lookup(addrs, opts, fn) {
  */
 
 function filter(arr) {
+  arry = arr || [];
   return arr.filter(function(v){
     return v != null;
   });
