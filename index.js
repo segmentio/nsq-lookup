@@ -18,7 +18,13 @@ require('superagent-retry')(request);
  * Expose `lookup()`.
  */
 
-module.exports = lookup;
+exports = module.exports = lookup;
+
+/**
+ * Expose `topicFilter`
+ */
+
+exports.topicFilter = topicFilter;
 
 /**
  * Lookup using nsqlookupd `addrs`.
@@ -59,10 +65,30 @@ function lookup(addrs, opts, fn) {
   });
 
   batch.end(function(errors, results){
+    results = filter(results);
     errors = filter(errors);
-    results = dedupe(filter(results));
+
+    if (opts.topic) {
+      results = topicFilter(topic, results);
+    }
+
+    results = dedupe(results);
     debug('errors=%j results=%j', errors, results);
     fn(errors.length ? errors : null, results);
+  });
+}
+
+/**
+ * Filter all producers/nodes to a given topic
+ */
+
+function topicFilter(topic, nodes) {
+  return nodes.filter(function(node){
+    if (node.topics.indexOf(topic) === -1) {
+      return false;
+    }
+
+    return true;
   });
 }
 
