@@ -21,12 +21,6 @@ require('superagent-retry')(request);
 exports = module.exports = lookup;
 
 /**
- * Expose `topicFilter`
- */
-
-exports.topicFilter = topicFilter;
-
-/**
  * Lookup using nsqlookupd `addrs`.
  *
  * @param {Array} addrs
@@ -47,11 +41,15 @@ function lookup(addrs, opts, fn) {
   var timeout = opts.timeout || 20000;
   var retries = opts.retries || 2;
 
+  if (!opts.topic) {
+    return fn(new Error('invalid or missing topic'), null);
+  }
+
   addrs.forEach(function(addr){
-    debug('lookup %s', addr);
+    debug('lookup %s for topic %s', addr, opts.topic);
     batch.push(function(done){
       request
-      .get(addr + '/nodes')
+      .get(addr + '/lookup?topic=' + opts.topic)
       .timeout(timeout)
       .retry(retries)
       .end(function(err, res){
@@ -65,30 +63,11 @@ function lookup(addrs, opts, fn) {
   });
 
   batch.end(function(errors, results){
-    results = filter(results);
     errors = filter(errors);
+    results = filter(results);
 
-    if (opts.topic) {
-      results = topicFilter(opts.topic, results);
-    }
-
-    results = dedupe(results);
     debug('errors=%j results=%j', errors, results);
     fn(errors.length ? errors : null, results);
-  });
-}
-
-/**
- * Filter all producers/nodes to a given topic
- */
-
-function topicFilter(topic, nodes) {
-  return nodes.filter(function(node){
-    if (node.topics.indexOf(topic) === -1) {
-      return false;
-    }
-
-    return true;
   });
 }
 
