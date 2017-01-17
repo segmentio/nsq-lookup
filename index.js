@@ -69,7 +69,7 @@ function lookup(addrs, opts, fn) {
     errors = filter(errors);
 
     if (opts.topic) {
-      results = topicFilter(topic, results);
+      results = topicFilter(opts.topic, results);
     }
 
     results = dedupe(results);
