@@ -21,7 +21,7 @@ var addrs = [
 ];
 
 var opts = {
-	timeout: 10000,
+  timeout: 10000,
   topic: 'foobar' // optionally filter nodes based on topic
 };
 
