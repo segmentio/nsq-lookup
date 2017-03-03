@@ -40,16 +40,23 @@ function lookup(addrs, opts, fn) {
 
   var timeout = opts.timeout || 20000;
   var retries = opts.retries || 2;
+  var path = '/nodes';
 
-  if (!opts.topic) {
-    return fn(new Error('invalid or missing topic'), null);
+  //
+  // This should be opt in. The cases where you are looking up nsqd instances
+  // as an nsq-writer needs the ability to get all of the nodes if the topic
+  // has not been created yet by a publish. We shouldn't limit the set of nodes
+  // in that case. For readers this makes sense.
+  //
+  if (opts.topic) {
+    path = '/lookup?topic=' + opts.topic;
   }
 
   addrs.forEach(function(addr){
     debug('lookup %s for topic %s', addr, opts.topic);
     batch.push(function(done){
       request
-      .get(addr + '/lookup?topic=' + opts.topic)
+      .get(addr + path)
       .timeout(timeout)
       .retry(retries)
       .end(function(err, res){
