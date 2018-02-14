@@ -12,7 +12,8 @@ var addrs = [
 ];
 
 var opts = {
-	timeout: 10000
+	timeout: 10000,
+	topic: 'foobar'
 };
 
 lookup(addrs, opts, function(errors, nodes){
