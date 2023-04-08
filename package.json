@@ -12,7 +12,7 @@
     "batch": "~0.5.0",
     "debug": "^2.2.0",
     "superagent": "~3.5.0",
-    "superagent-retry": "^0.5.1"
+    "superagent-retry": "^0.6.0"
   },
   "devDependencies": {
     "mocha": "*",
