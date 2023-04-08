@@ -9,7 +9,7 @@
     "nsqlookupd"
   ],
   "dependencies": {
-    "batch": "~0.5.0",
+    "batch": "~0.6.1",
     "debug": "^2.2.0",
     "superagent": "~3.5.0",
     "superagent-retry": "^0.5.1"
