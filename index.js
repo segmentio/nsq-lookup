@@ -3,29 +3,17 @@
  * Module dependencies.
  */
 
-var debug = require('debug')('nsq-lookup');
-var request = require('superagent');
-var Batch = require('batch');
-
-/**
- * Retry support.
- */
-
-require('superagent-retry')(request);
-
-
-/**
- * Expose `lookup()`.
- */
-
-exports = module.exports = lookup;
+const debug = require('debug')('nsq-lookup');
+const request = require('superagent');
+const Batch = require('batch');
 
 /**
  * Lookup using nsqlookupd `addrs`.
  *
  * @param {Array} addrs
- * @param {Function} fn
- * @api public
+ * @param {Function|{}} opts
+ * @param {(Function|undefined)} fn
+ * @access public
  */
 
 function lookup(addrs, opts, fn) {
@@ -33,7 +21,7 @@ function lookup(addrs, opts, fn) {
   batch.throws(false);
   batch.concurrency(addrs.length);
 
-  if ('function' == typeof opts) {
+  if (typeof opts === 'function') {
     fn = opts;
     opts = {};
   }
@@ -45,26 +33,30 @@ function lookup(addrs, opts, fn) {
     return fn(new Error('invalid or missing topic'), null);
   }
 
-  addrs.forEach(function(addr){
+  addrs.forEach(function(addr) {
     debug('lookup %s for topic %s', addr, opts.topic);
-    batch.push(function(done){
+    batch.push(function(done) {
       request
-      .get(addr + '/lookup?topic=' + opts.topic)
-      .timeout(timeout)
-      .retry(retries)
-      .end(function(err, res){
-        if (err) return done(err);
-        if (res.error) return done(res.error);
-        var data = res.body && res.body.data || {};
-        var producers = data.producers || [];
-        done(null, producers);
-      })
+        .get(addr + '/lookup?topic=' + opts.topic)
+        .timeout(timeout)
+        .retry(retries, (err, res) => {
+          if (res?.status === 500) {
+            return false;
+          }
+        })
+        .end(function(err, res) {
+          if (err) return done(err);
+          if (res.error) return done(res.error);
+          var data = res.body && res.body.data || {};
+          var producers = data.producers || [];
+          done(null, producers);
+        })
     });
   });
 
-  batch.end(function(errors, results){
-    errors = filter(errors);
-    results = filter(results);
+  batch.end(function(errors, results) {
+    errors = errors?.filter(Boolean) ?? [];
+    results = results?.filter(Boolean) ?? [];
 
     results = dedupe(results);
 
@@ -74,22 +66,11 @@ function lookup(addrs, opts, fn) {
 }
 
 /**
- * Drops null and uddefined.
- */
-
-function filter(arr) {
-  arry = arr || [];
-  return arr.filter(function(v){
-    return v != null;
-  });
-}
-
-/**
  * Dedupe `results`.
  *
  * @param {Array} results
  * @return {Array}
- * @api private
+ * @access private
  */
 
 function dedupe(results) {
@@ -98,8 +79,8 @@ function dedupe(results) {
   var ret = [];
   var set = {};
 
-  results.forEach(function(nodes){
-    nodes.forEach(function(node){
+  results.forEach(function(nodes) {
+    nodes.forEach(function(node) {
       var addr = node.broadcast_address + ':' + node.tcp_port;
       if (set[addr]) return debug('already registered');
       set[addr] = true;
@@ -109,3 +90,9 @@ function dedupe(results) {
 
   return ret;
 }
+
+/**
+ * Export `lookup()`.
+ */
+
+module.exports = lookup;

@@ -9,10 +9,9 @@
     "nsqlookupd"
   ],
   "dependencies": {
-    "batch": "~0.5.0",
-    "debug": "^2.2.0",
-    "superagent": "~3.5.0",
-    "superagent-retry": "^0.5.1"
+    "batch": "^0.6.1",
+    "debug": "^4.3.4",
+    "superagent": "^8.0.9"
   },
   "devDependencies": {
     "mocha": "*",
